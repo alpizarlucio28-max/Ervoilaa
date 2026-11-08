@@ -106,7 +106,15 @@ local games = {
 
 -- moon, matched by universe so it works in the lobby and the game
 local MOON_GAME_ID = 10770466814
-local MOON_PLACES = { [77902310012360] = true, [1794065552826] = true }
+-- Place IDs that must resolve to the Moon entry. The universe check below is a
+-- safety net, not a substitute: it needs game.GameId to be readable and it is
+-- simply nicer to have the exact IDs listed. 88549191352404 is the Moon place
+-- itself; the two older IDs cover the lobby and the previous Moon build.
+local MOON_PLACES = {
+    [88549191352404] = true,
+    [77902310012360] = true,
+    [1794065552826] = true,
+}
 
 local moonEntry = {
     name = "Moon",
