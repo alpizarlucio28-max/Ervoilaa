@@ -5,17 +5,10 @@ discord.gg/ervoila
 dont reupload this
 ]]
 
--- dummy macros so it doesnt error when run uncompiled
-if not LPH_OBFUSCATED then
-getgenv().LPH_ATTRIBUTES = function(...) end
-getgenv().ENCRYPT = function(...) end
-end
-
 local GLOBAL_KEYLESS_MODE = false -- set true to turn off the key system
 
 -- xor
 local function _e(str, key)
-LPH_ATTRIBUTES(ENCRYPT("LUAPROT", "LUAPROT")) -- LuaProt Encryption Flag
 local res = {}
 for i = 1, #str do
 local char = string.byte(str, i)
@@ -33,13 +26,13 @@ local heMain    = "https://luaprot.net/api/v3/loaders/get/69894509937470821569"
 local txMain    = "https://luaprot.net/api/v3/loaders/get/49059268727434618091"
 local moonMain  = "https://luaprot.net/api/v3/loaders/get/49344018525772747851"
 local stcMain   = "https://luaprot.net/api/v3/loaders/get/93276521945463462103"
+local rvMain    = "https://luaprot.net/api/v3/loaders/get/14726428719250395680"
 
 local _enc_discord_code = _e("ervoila", _k)
 local _enc_banner_url = _e("https://media.discordapp.net/attachments/1494760735337615491/1504899466606673960/ERVOILA_1.png?ex=6a08aa58&is=6a0758d8&hm=41e2efbdaf6124ffb072a1e0c467494f8c1dde6f0f11ad2cb53eb2c1514a703c&=&format=webp&quality=lossless&width=1872&height=250", _k)
 
 -- env check
 local function _check_env()
-LPH_ATTRIBUTES(ENCRYPT("LUAPROT", "LUAPROT")) -- LuaProt Encryption Flag
 local _bad_globals = {"getgenv", "getrenv", "getreg", "getgc", "getinstances", "getnilinstances", "getloadedmodules", "getconnections", "firesignal", "fireclickdetector", "firetouchinterest", "isrbxactive", "mouse1click", "mouse2click", "mousemoverel", "mousescroll", "mouse1press", "mouse1release", "mouse2press", "mouse2release", "keypress", "keyrelease", "iswindowactive", "isgameactive", "readfile", "writefile", "appendfile", "loadfile", "listfiles", "isfile", "isfolder", "makefolder", "delfile", "delfolder", "dofile", "loadstring", "getcustomasset"}
 for _, _g in ipairs(_bad_globals) do
 if getfenv()[_g] or _G[_g] then
@@ -101,7 +94,8 @@ local games = {
         }
     },
     [16272604134] = {name = "TwisterX", scripts = {{name = "Main Hub", url = txMain}}},
-    [75356998324697] = {name = "Ship The Cargo", scripts = {{name = "Main Hub", url = stcMain}}}
+    [75356998324697] = {name = "Ship The Cargo", scripts = {{name = "Main Hub", url = stcMain}}},
+    [17625359962] = {name = "RIVALS", keyless = true, scripts = {{name = "Rivals", url = rvMain}}}
 }
 
 -- moon, matched by universe so it works in the lobby and the game
@@ -144,11 +138,14 @@ end
 
 local isMoon = (current == moonEntry) or MOON_PLACES[game.PlaceId] == true
 
--- show the key box if anything here is keyed
+-- true when this game runs without a key (RIVALS, or the global switch)
+local game_keyless = GLOBAL_KEYLESS_MODE or current.keyless == true
+
+-- show the key box only if something here is actually keyed
 local ui_needs_key = false
-if not GLOBAL_KEYLESS_MODE then
+if not game_keyless then
     for _, s in pairs(current.scripts) do
-        if not s.paid then
+        if not s.paid and not s.keyless then
             ui_needs_key = true
             break
         end
@@ -439,9 +436,11 @@ if ui_needs_key then
         Position = UDim2.fromOffset(12, 24),
         Size = UDim2.new(1, -110, 0, 22),
         Font = Enum.Font.GothamMedium,
-        Text = "discord.gg/ervoila\n" .. (isMoon
-            and "No ads. Join and grab your key."
-            or "Join to get your key."),
+        Text = "discord.gg/ervoila\n" .. (game_keyless
+            and "No key needed. Join for updates and support."
+            or (isMoon
+                and "No ads. Join and grab your key."
+                or "Join to get your key.")),
         TextColor3 = MUTED,
         TextSize = 10,
         TextWrapped = true,
@@ -593,7 +592,9 @@ for i, v in pairs(current.scripts) do
             Position = UDim2.fromOffset(14, 24),
             Size = UDim2.new(1, -100, 0, 15),
             Font = Enum.Font.GothamMedium,
-            Text = (v.name == "Sweep The Moon") and "Free - key from the Discord" or "Key required",
+            Text = (v.keyless or game_keyless)
+                and "Keyless - no key needed"
+                or ((v.name == "Sweep The Moon") and "Free - key from the Discord" or "Key required"),
             TextColor3 = MUTED,
             TextSize = 10,
             TextXAlignment = Enum.TextXAlignment.Left,
@@ -634,26 +635,22 @@ for i, v in pairs(current.scripts) do
             chip.BackgroundColor3 = PANEL2
             say("Connecting...", SUB)
 
-            -- luaprot reads the key from lp_key
-            local key = GLOBAL_KEYLESS_MODE and "" or k
-            if type(getgenv) == "function" then getgenv().lp_key = key end
-            _G.lp_key = key
-            if type(getfenv) == "function" then
-                pcall(function() getfenv(0).lp_key = key end)
+            -- LuaProt's loader stub reads the global lp_key and builds
+            -- "<script url>?k=" .. (lp_key or "x"). Writing an EMPTY string
+            -- here produces "?k=" which LuaProt rejects as "Missing
+            -- parameters", so only hand over a key when there really is one.
+            if not (GLOBAL_KEYLESS_MODE or v.keyless or game_keyless) and #k > 0 then
+                if type(getgenv) == "function" then getgenv().lp_key = k end
+                _G.lp_key = k
+                if type(getfenv) == "function" then
+                    pcall(function() getfenv(0).lp_key = k end)
+                end
             end
 
             gui.Enabled = false
 
             local ok2, err = pcall(function()
-                local src = game:HttpGet(v.url)
-                -- if luaprot refuses, print what it said
-                local low = tostring(src):lower()
-                if low:find("not allowed", 1, true)
-                    or low:find("invalid key", 1, true)
-                    or low:find("blacklist", 1, true) then
-                    warn("[Ervoila] LuaProt said: " .. tostring(src):sub(1, 200))
-                end
-                loadstring(src)()
+                loadstring(game:HttpGet(v.url))()
             end)
 
             if not ok2 then
