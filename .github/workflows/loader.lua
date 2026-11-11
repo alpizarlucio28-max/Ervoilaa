@@ -22,7 +22,9 @@ local _k = "ervoila_secure_key_2024"
 -- endpoints
 local twMain    = "https://luaprot.net/api/v3/loaders/get/98708973876200258257"
 local twTruck   = "https://luaprot.net/api/v3/loaders/get/20666563422235563630"
+local twProbe   = "https://luaprot.net/api/v3/loaders/get/82147944153403029808"
 local heMain    = "https://luaprot.net/api/v3/loaders/get/69894509937470821569"
+local heProbe   = "https://luaprot.net/api/v3/loaders/get/38094715006260034759"
 local txMain    = "https://luaprot.net/api/v3/loaders/get/49059268727434618091"
 local moonMain  = "https://luaprot.net/api/v3/loaders/get/49344018525772747851"
 local stcMain   = "https://luaprot.net/api/v3/loaders/get/93276521945463462103"
@@ -83,14 +85,14 @@ local games = {
         scripts = {
             {name = "Main Hub", url = twMain},
             {name = "Trucker Autofarm", url = twTruck},
-            {name = "Probe Autofarm", paid = true} -- card only, sold privately
+            {name = "Probe Autofarm", url = twProbe, adkey = true}
         }
     },
     [17759606919] = {
         name = "Helicity",
         scripts = {
             {name = "Main Hub", url = heMain},
-            {name = "Autofarm Probe", paid = true} -- card only
+            {name = "Autofarm Probe", url = heProbe, adkey = true}
         }
     },
     [16272604134] = {name = "TwisterX", scripts = {{name = "Main Hub", url = txMain}}},
@@ -145,7 +147,7 @@ local game_keyless = GLOBAL_KEYLESS_MODE or current.keyless == true
 local ui_needs_key = false
 if not game_keyless then
     for _, s in pairs(current.scripts) do
-        if not s.paid and not s.keyless then
+        if not s.keyless then
             ui_needs_key = true
             break
         end
@@ -176,6 +178,7 @@ local SUB    = Color3.fromRGB(148, 150, 168)
 local MUTED  = Color3.fromRGB(102, 104, 122)
 local OK     = Color3.fromRGB(72, 214, 130)
 local BAD    = Color3.fromRGB(246, 96, 96)
+local ADKEY  = Color3.fromRGB(196, 150, 60)
 
 local function mk(class, props, parent)
     local o = Instance.new(class)
@@ -509,161 +512,115 @@ end
 
 -- script rows
 for i, v in pairs(current.scripts) do
-    if v.paid then
-        -- paid card, nothing to click
-        local card = mk("Frame", {
-            LayoutOrder = nextOrder(),
-            BackgroundColor3 = PANEL,
-            BorderSizePixel = 0,
-            Size = UDim2.new(1, 0, 0, 54),
-        }, bg)
-        round(card, 9)
-        outline(card, LINE)
+    -- load row
+    local row = mk("TextButton", {
+        LayoutOrder = nextOrder(),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        AutoButtonColor = false,
+        Size = UDim2.new(1, 0, 0, 46),
+        Text = "",
+    }, bg)
+    round(row, 9)
+    local rowStroke = outline(row, LINE)
 
-        local bar = mk("Frame", {
-            BackgroundColor3 = Color3.fromRGB(196, 150, 60),
-            BorderSizePixel = 0,
-            Size = UDim2.fromOffset(3, 30),
-            Position = UDim2.fromOffset(10, 12),
-        }, card)
-        round(bar, 2)
+    mk("TextLabel", {
+        BackgroundTransparency = 1,
+        Position = UDim2.fromOffset(14, 6),
+        Size = UDim2.new(1, -100, 0, 18),
+        Font = Enum.Font.GothamBold,
+        Text = v.name,
+        TextColor3 = TEXT,
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    }, row)
 
-        mk("TextLabel", {
-            BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(21, 8),
-            Size = UDim2.new(1, -32, 0, 16),
-            Font = Enum.Font.GothamBold,
-            Text = v.name,
-            TextColor3 = Color3.fromRGB(202, 202, 214),
-            TextSize = 13,
-            TextXAlignment = Enum.TextXAlignment.Left,
-        }, card)
-
-        mk("TextLabel", {
-            BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(21, 25),
-            Size = UDim2.new(1, -32, 0, 22),
-            Font = Enum.Font.GothamMedium,
-            Text = "$6 - PAID ONLY.  Get it from discord.gg/ervoila",
-            TextColor3 = Color3.fromRGB(196, 150, 60),
-            TextSize = 11,
-            TextWrapped = true,
-            TextYAlignment = Enum.TextYAlignment.Top,
-            TextXAlignment = Enum.TextXAlignment.Left,
-        }, card)
-
-        -- just tells them where to buy
-        local hit = mk("TextButton", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 1),
-            Text = "",
-            AutoButtonColor = false,
-        }, card)
-        hit.MouseButton1Click:Connect(function()
-            say(v.name .. " is $6 - get it from discord.gg/ervoila",
-                Color3.fromRGB(196, 150, 60), 6)
-        end)
+    -- what it takes to load this one
+    local row_sub, row_sub_col
+    if v.keyless or game_keyless then
+        row_sub, row_sub_col = "Keyless - no key needed", OK
+    elseif v.adkey then
+        row_sub, row_sub_col = "Free - unlock with an ad key", ADKEY
+    elseif v.name == "Sweep The Moon" then
+        row_sub, row_sub_col = "Free - key from the Discord", MUTED
     else
-        -- load row
-        local row = mk("TextButton", {
-            LayoutOrder = nextOrder(),
-            BackgroundColor3 = PANEL,
-            BorderSizePixel = 0,
-            AutoButtonColor = false,
-            Size = UDim2.new(1, 0, 0, 46),
-            Text = "",
-        }, bg)
-        round(row, 9)
-        local rowStroke = outline(row, LINE)
-
-        mk("TextLabel", {
-            BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(14, 6),
-            Size = UDim2.new(1, -100, 0, 18),
-            Font = Enum.Font.GothamBold,
-            Text = v.name,
-            TextColor3 = TEXT,
-            TextSize = 13,
-            TextXAlignment = Enum.TextXAlignment.Left,
-        }, row)
-
-        mk("TextLabel", {
-            BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(14, 24),
-            Size = UDim2.new(1, -100, 0, 15),
-            Font = Enum.Font.GothamMedium,
-            Text = (v.keyless or game_keyless)
-                and "Keyless - no key needed"
-                or ((v.name == "Sweep The Moon") and "Free - key from the Discord" or "Key required"),
-            TextColor3 = MUTED,
-            TextSize = 10,
-            TextXAlignment = Enum.TextXAlignment.Left,
-        }, row)
-
-        local chip = mk("Frame", {
-            AnchorPoint = Vector2.new(1, 0.5),
-            Position = UDim2.new(1, -12, 0.5, 0),
-            Size = UDim2.fromOffset(70, 28),
-            BackgroundColor3 = ACCENT,
-            BorderSizePixel = 0,
-        }, row)
-        round(chip, 7)
-
-        local chipText = mk("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 1),
-            Font = Enum.Font.GothamBold,
-            Text = "LOAD",
-            TextColor3 = Color3.fromRGB(255, 255, 255),
-            TextSize = 11,
-        }, chip)
-
-        row.MouseEnter:Connect(function()
-            ts:Create(row, TweenInfo.new(0.12), { BackgroundColor3 = PANEL2 }):Play()
-            ts:Create(rowStroke, TweenInfo.new(0.12), { Color = ACCENT }):Play()
-        end)
-        row.MouseLeave:Connect(function()
-            ts:Create(row, TweenInfo.new(0.12), { BackgroundColor3 = PANEL }):Play()
-            ts:Create(rowStroke, TweenInfo.new(0.12), { Color = LINE }):Play()
-        end)
-
-        row.MouseButton1Click:Connect(function()
-            local k = box and box.Text or ""
-            k = k:gsub("%s+", "") -- keys pasted from discord carry newlines
-
-            chipText.Text = "..."
-            chip.BackgroundColor3 = PANEL2
-            say("Connecting...", SUB)
-
-            -- LuaProt's loader stub reads the global lp_key and builds
-            -- "<script url>?k=" .. (lp_key or "x"). Writing an EMPTY string
-            -- here produces "?k=" which LuaProt rejects as "Missing
-            -- parameters", so only hand over a key when there really is one.
-            if not (GLOBAL_KEYLESS_MODE or v.keyless or game_keyless) and #k > 0 then
-                if type(getgenv) == "function" then getgenv().lp_key = k end
-                _G.lp_key = k
-                if type(getfenv) == "function" then
-                    pcall(function() getfenv(0).lp_key = k end)
-                end
-            end
-
-            gui.Enabled = false
-
-            local ok2, err = pcall(function()
-                loadstring(game:HttpGet(v.url))()
-            end)
-
-            if not ok2 then
-                pcall(function() gui.Enabled = true end)
-                pcall(function()
-                    chipText.Text = "FAILED"
-                    chip.BackgroundColor3 = BAD
-                end)
-                say("Loader stopped - see the console", BAD, 10)
-                warn("[Ervoila] " .. tostring(err))
-            end
-        end)
+        row_sub, row_sub_col = "Key required", MUTED
     end
+
+    mk("TextLabel", {
+        BackgroundTransparency = 1,
+        Position = UDim2.fromOffset(14, 24),
+        Size = UDim2.new(1, -100, 0, 15),
+        Font = Enum.Font.GothamMedium,
+        Text = row_sub,
+        TextColor3 = row_sub_col,
+        TextSize = 10,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    }, row)
+
+    local chip = mk("Frame", {
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -12, 0.5, 0),
+        Size = UDim2.fromOffset(70, 28),
+        BackgroundColor3 = ACCENT,
+        BorderSizePixel = 0,
+    }, row)
+    round(chip, 7)
+
+    local chipText = mk("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.fromScale(1, 1),
+        Font = Enum.Font.GothamBold,
+        Text = "LOAD",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 11,
+    }, chip)
+
+    row.MouseEnter:Connect(function()
+        ts:Create(row, TweenInfo.new(0.12), { BackgroundColor3 = PANEL2 }):Play()
+        ts:Create(rowStroke, TweenInfo.new(0.12), { Color = ACCENT }):Play()
+    end)
+    row.MouseLeave:Connect(function()
+        ts:Create(row, TweenInfo.new(0.12), { BackgroundColor3 = PANEL }):Play()
+        ts:Create(rowStroke, TweenInfo.new(0.12), { Color = LINE }):Play()
+    end)
+
+    row.MouseButton1Click:Connect(function()
+        local k = box and box.Text or ""
+        k = k:gsub("%s+", "") -- keys pasted from discord carry newlines
+
+        chipText.Text = "..."
+        chip.BackgroundColor3 = PANEL2
+        say("Connecting...", SUB)
+
+        -- LuaProt's loader stub reads the global lp_key and builds
+        -- "<script url>?k=" .. (lp_key or "x"). Writing an EMPTY string
+        -- here produces "?k=" which LuaProt rejects as "Missing
+        -- parameters", so only hand over a key when there really is one.
+        if not (GLOBAL_KEYLESS_MODE or v.keyless or game_keyless) and #k > 0 then
+            if type(getgenv) == "function" then getgenv().lp_key = k end
+            _G.lp_key = k
+            if type(getfenv) == "function" then
+                pcall(function() getfenv(0).lp_key = k end)
+            end
+        end
+
+        gui.Enabled = false
+
+        local ok2, err = pcall(function()
+            loadstring(game:HttpGet(v.url))()
+        end)
+
+        if not ok2 then
+            pcall(function() gui.Enabled = true end)
+            pcall(function()
+                chipText.Text = "FAILED"
+                chip.BackgroundColor3 = BAD
+            end)
+            say("Loader stopped - see the console", BAD, 10)
+            warn("[Ervoila] " .. tostring(err))
+        end
+    end)
 end
 
 if #current.scripts == 0 then
