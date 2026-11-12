@@ -95,7 +95,7 @@ local games = {
             {name = "Autofarm Probe", url = heProbe, adkey = true}
         }
     },
-    [16272604134] = {name = "TwisterX", scripts = {{name = "Main Hub", url = txMain}}},
+    [137775739066479] = {name = "TwisterX", scripts = {{name = "Main Hub", url = txMain}}},
     [75356998324697] = {name = "Ship The Cargo", scripts = {{name = "Main Hub", url = stcMain}}},
     [17625359962] = {name = "RIVALS", keyless = true, scripts = {{name = "Rivals", url = rvMain}}}
 }
