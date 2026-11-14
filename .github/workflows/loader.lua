@@ -29,6 +29,7 @@ local txMain    = "https://luaprot.net/api/v3/loaders/get/49059268727434618091"
 local moonMain  = "https://luaprot.net/api/v3/loaders/get/49344018525772747851"
 local stcMain   = "https://luaprot.net/api/v3/loaders/get/93276521945463462103"
 local rvMain    = "https://luaprot.net/api/v3/loaders/get/14726428719250395680"
+local rcMain    = "https://luaprot.net/api/v3/loaders/get/58612659438017459476"
 
 local _enc_discord_code = _e("ervoila", _k)
 local _enc_banner_url = _e("https://media.discordapp.net/attachments/1494760735337615491/1504899466606673960/ERVOILA_1.png?ex=6a08aa58&is=6a0758d8&hm=41e2efbdaf6124ffb072a1e0c467494f8c1dde6f0f11ad2cb53eb2c1514a703c&=&format=webp&quality=lossless&width=1872&height=250", _k)
@@ -97,7 +98,8 @@ local games = {
     },
     [137775739066479] = {name = "TwisterX", scripts = {{name = "Main Hub", url = txMain}}},
     [75356998324697] = {name = "Ship The Cargo", scripts = {{name = "Main Hub", url = stcMain}}},
-    [17625359962] = {name = "RIVALS", keyless = true, scripts = {{name = "Rivals", url = rvMain}}}
+    [17625359962] = {name = "RIVALS", keyless = true, scripts = {{name = "Rivals", url = rvMain}}},
+    [5829141886] = {name = "Realistic Car Driving", keyless = true, scripts = {{name = "Main Hub", url = rcMain}}}
 }
 
 -- moon, matched by universe so it works in the lobby and the game
